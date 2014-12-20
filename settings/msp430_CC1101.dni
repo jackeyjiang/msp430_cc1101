@@ -9,7 +9,7 @@ TriggerName=main
 LimitSize=0
 ByteLimit=50
 [DebugChecksum]
-Checksum=-1038891349
+Checksum=994231838
 [CallStack]
 ShowArgs=0
 [Disassembly]
@@ -72,7 +72,8 @@ Category=_ 0
 LoggingEnabled=_ 0
 LogFile=_ ""
 [Breakpoints]
-Count=0
+Bp0=_ "STD_CODE" "{$PROJ_DIR$\main.c}.62.1" 1 0 0 0 "" 0 ""
+Count=1
 [FET]
 Clock mode=38
 Extended Clock mode=1

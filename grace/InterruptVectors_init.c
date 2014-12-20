@@ -61,7 +61,15 @@ __interrupt void PORT2_ISR_HOOK(void)
     /* USER CODE END (section: PORT2_ISR_HOOK) */
   INT32U cnt_t=0;
   _DINT();
-  if((P2IFG&BIT6)==BIT6)
+  if((P2IFG&BIT0)==BIT0)
+  {
+    P2IFG &=~ BIT0;
+  }
+  else if((P2IFG&BIT1)==BIT1)
+  {
+    P2IFG &=~ BIT1;
+  } 
+  else if((P2IFG&BIT6)==BIT6)
   {
     do
     {

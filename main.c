@@ -18,6 +18,7 @@ INT8U  PKLEN= 0;        //测试配置是否成功用
 INT16U pwm1st_wid= 0;      //脉宽（接收用）
 INT16U pwm2nd_wid= 0;      //脉宽（接收用）
 INT8U  PwmWidthNum=0;       //脉宽指数I
+INT8U  right_cnt=0;
 
 bool  StopFlag= false;      //暂停标记位
 bool  StopFlagOld= false;   //用来记录标记位的变化
@@ -27,7 +28,7 @@ bool  Moto2ndChange= false;  //电机换向标记
 /*======== main ========*/
 int main(void)
 {
-    INT8U i=0;
+    INT8U i=0,right_cnt=0;
 	Grace_init();   //图形化配置选项
     SpiInit();      //cc1101 SPI接口初始化
 	POWER_UP_RESET_CC1100(); //上电复位CC1101
@@ -35,10 +36,9 @@ int main(void)
     PKLEN= halSpiReadReg(CCxxx0_PKTLEN);  //测试配置是否成功
 	halSpiWriteBurstReg(CCxxx0_PATABLE, PaTabel, 8); //配置天线增益
 #ifdef txmode  
-   setSleepMpde(); //设置CC1101进入低功耗状态
+   //setSleepMpde(); //设置CC1101进入低功耗状态
    while(1) //发送端
-    {
-        __bis_SR_register(LPM0_bits+GIE);  // Enter LPM0
+   {   
         PWM_set(moto_1st,PwmWith[PwmWidthNum]);   //设置本机的PWM输出 
         TxBuf[1]= Moto1stChange; Moto1stChange=false;
         TxBuf[2]= (PwmWith[PwmWidthNum]>>8)&0x00FF;
@@ -49,10 +49,26 @@ int main(void)
         TxBuf[7]=  StopFlag; StopFlag=false;   //发送一次切换一次
         halRfSendPacket(TxBuf,8);// 传输TxBuf指向的数据
         for(i=1;i<8;i++) TxBuf[i]=0;  //保留TxBuf[0]作为ID号
-        setSleepMpde(); //设置CC1101进入低功耗状态    
+        setRxMode();     //设置为接收模式
+        //打开LED1：检验通信距离
+        __bis_SR_register(LPM0_bits+GIE);   // Enter LPM0
+        if(halRfReceivePacket(RxBuf,&leng)) //设置为接受模式
+        {
+          for(i=0;i<6;i++) //检验是否接受OK
+          { 
+            if(*(RxBuf+i)==(ActBuf[i])) right_cnt++;
+          }
+          if(right_cnt<6) //检验出错
+          {
+            //关闭LED1：检验通信距离
+          }
+          right_cnt=0;
+        }
+        //setSleepMpde(); //设置CC1101进入低功耗状态    
+        __bis_SR_register(LPM0_bits+GIE);  // Enter LPM0
     }
 #else
-    setRxMode();//设置CC1101进入接收模式
+    //CC1101_InitWOR(); //初始化CC1101进入WOR模式
     while(1) //接收端
     {
   	    if(halRfReceivePacket(RxBuf,&leng))
@@ -89,8 +105,11 @@ int main(void)
             }
             for(i=0;i<8;i++) RxBuf[i]=0; 
             halRfSendPacket(ActBuf,8); //加入回复ACK，这样可以测试双向通信，及距离
+            setRxMode();//设置为接收模式
             //可以测试一下WOR电磁波唤醒。
 		}
+        //CC1101_WOR(); //再次进入WOR模式
+        __bis_SR_register(LPM0_bits+GIE);   // Enter LPM0
 	}
 #endif
 }

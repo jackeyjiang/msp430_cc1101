@@ -224,7 +224,7 @@
         </option>
         <option>
           <name>Math description</name>
-          <state></state>
+          <state>Default variants of cos, sin, tan, log, log10, pow, and exp.</state>
         </option>
       </data>
     </settings>

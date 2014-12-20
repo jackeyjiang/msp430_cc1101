@@ -86,7 +86,6 @@ void SpiInit(void)
 	SCK_DIR_OUT;
 	CSN_DIR_OUT;
 	GDO0_DIR_IN;
-	GDO2_DIR_IN;
         
     CSN_DN;
     SCK_DN;
@@ -337,12 +336,23 @@ void halRfSendPacket(INT8U *txBuffer, INT8U size)
     halSpiStrobe(CCxxx0_SFTX);
 }
 
-
+//*****************************************************************************************
+//函数名：void setRxMode(void)
+//输入：发送的缓冲区，发送数据个数
+//输出：无
+//功能描述：CC1100发送一组数据
+//*****************************************************************************************
 void setRxMode(void)
 {
     halSpiStrobe(CCxxx0_SRX);		//进入接收状态
 }
 
+//*****************************************************************************************
+//函数名：INT8U halRfReceivePacket(INT8U *rxBuffer, INT8U *length)
+//输入：接受的数组，接受数据个数
+//输出：0：没有数据/读取失败  1：读取成功
+//功能描述：从CC1100读取缓冲区的数组长度，接着读取整组组数据
+//*****************************************************************************************
 INT8U halRfReceivePacket(INT8U *rxBuffer, INT8U *length) 
 {
     INT8U status[2];
@@ -350,9 +360,6 @@ INT8U halRfReceivePacket(INT8U *rxBuffer, INT8U *length)
     INT8U i=(*length)*4;  // 具体多少要根据datarate和length来决定
 
     halSpiStrobe(CCxxx0_SRX);		//进入接收状态
-    //delay(5);
-    //while (!GDO1);
-    //while (GDO1);
     delay(2);
     while (GDO0_IN)
     {
@@ -384,6 +391,12 @@ INT8U halRfReceivePacket(INT8U *rxBuffer, INT8U *length)
     return 0;
 }
 
+//*****************************************************************************************
+//函数名：void setSleepMpde(void)
+//输入：无
+//输出：无
+//功能描述：设置CC1101进入降低模式
+//*****************************************************************************************
 void setSleepMpde(void)
 {
     CSN_UP ;   //CSn为高时进入功率降低模式

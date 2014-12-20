@@ -1,4 +1,4 @@
-"F:\个人实践\电子转盘\程序\测试\grace\System_init.c"
+"F:\个人实践\电子转盘\程序\测试\msp430_cc1101\grace\System_init.c"
 -std=c99
 -ferror-limit=100
 -I
@@ -206,8 +206,8 @@ C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.0\430\inc\dlib\c
 -D__HAS_LOCATED_DECLARATION__=1
 -D__IAR_COMPILERBASE__=594180
 -D_GOANNA=1
--D__DATE__="Dec 12 2014"
--D__TIME__="01:08:12"
+-D__DATE__="Dec 20 2014"
+-D__TIME__="23:13:06"
 -D__STDC__=1
 -D__STDC_VERSION__=199901L
 -D__STDC_HOSTED__=1

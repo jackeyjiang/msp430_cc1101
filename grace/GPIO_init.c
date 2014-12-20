@@ -82,13 +82,13 @@ void GPIO_graceInit(void)
     P2DIR = BIT2 | BIT3 | BIT4 | BIT5;
 
     /* Port 2 Interrupt Edge Select Register */
-    P2IES = BIT6 | BIT7;
+    P2IES = BIT0 | BIT1 | BIT6 | BIT7;
 
     /* Port 2 Interrupt Flag Register */
     P2IFG = 0;
 
     /* Port 2 Interrupt Enable Register */
-    P2IE = BIT6 | BIT7;
+    P2IE = BIT0 | BIT1 | BIT6 | BIT7;
 
     /* Port 3 Output Register */
     P3OUT = 0;
