@@ -6,7 +6,7 @@
 #include "cc1101/CC1100.h"
 #include "bsp/bsp.h"
 
-#define txmode
+
 
 /*----------------ID,moto1，pwm1(H),pwm1(L),moto2，pwm3(H),pwm3(L),stop---*/
 INT8U  TxBuf[8]= {0x08,0X00,0X00,0X00,0X00,0X00,0X00,0X00};	  //8字节长发送的数据包
@@ -39,6 +39,7 @@ int main(void)
    //setSleepMpde(); //设置CC1101进入低功耗状态
    while(1) //发送端
    {   
+        __bis_SR_register(LPM0_bits+GIE);  // Enter LPM0
         PWM_set(moto_1st,PwmWith[PwmWidthNum]);   //设置本机的PWM输出 
         TxBuf[1]= Moto1stChange; Moto1stChange=false;
         TxBuf[2]= (PwmWith[PwmWidthNum]>>8)&0x00FF;
@@ -50,8 +51,9 @@ int main(void)
         halRfSendPacket(TxBuf,8);// 传输TxBuf指向的数据
         for(i=1;i<8;i++) TxBuf[i]=0;  //保留TxBuf[0]作为ID号
         setRxMode();     //设置为接收模式
-        //打开LED1：检验通信距离
-        __bis_SR_register(LPM0_bits+GIE);   // Enter LPM0
+        PWM_set(moto_2nd,PwmWith[20]);//打开LED1：检验通信距离
+        Timer1_A3_graceInit();  //打开定时器2s定时，超时则Exit LPM0 
+        __bis_SR_register(LPM0_bits+GIE);   // Enter LPM0 
         if(halRfReceivePacket(RxBuf,&leng)) //设置为接受模式
         {
           for(i=0;i<6;i++) //检验是否接受OK
@@ -60,18 +62,22 @@ int main(void)
           }
           if(right_cnt<6) //检验出错
           {
-            //关闭LED1：检验通信距离
+            PWM_set(moto_2nd,PwmWith[1]); //半亮模式：检验通信距离
           }
+          else
+          {
+            PWM_set(moto_2nd,PwmWith[0]);//关闭LED1：检验通信距离
+          }
+          TA1CTL = MC_0; //关闭定时器TIM1
           right_cnt=0;
         }
-        //setSleepMpde(); //设置CC1101进入低功耗状态    
-        __bis_SR_register(LPM0_bits+GIE);  // Enter LPM0
+        setSleepMpde(); //设置CC1101进入低功耗状态    
     }
 #else
     //CC1101_InitWOR(); //初始化CC1101进入WOR模式
     while(1) //接收端
     {
-  	    if(halRfReceivePacket(RxBuf,&leng))
+  	    if(halRfReceivePacket(RxBuf,&leng)) //有数据就接收数据，无数据直接改变本地的PWM输出
 		{
             //获取LED的状态
             if(RxBuf[0]!=0x08) continue; //如果数据出错，继续读取数据帧
@@ -108,6 +114,11 @@ int main(void)
             setRxMode();//设置为接收模式
             //可以测试一下WOR电磁波唤醒。
 		}
+        else   //通过按键来改变本地的PWM输出
+        {
+          PWM_set(moto_1st,PwmWith[PwmWidthNum]);
+          PWM_set(moto_2nd,PwmWith[PwmWidthNum]);
+        }
         //CC1101_WOR(); //再次进入WOR模式
         __bis_SR_register(LPM0_bits+GIE);   // Enter LPM0
 	}

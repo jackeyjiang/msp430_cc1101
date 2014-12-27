@@ -61,6 +61,9 @@
       <name>$PROJ_DIR$\grace\Timer0_A3_init.c</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\grace\Timer1_A3_init.c</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\grace\WDTplus_init.c</name>
     </file>
   </group>

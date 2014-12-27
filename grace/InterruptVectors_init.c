@@ -60,7 +60,7 @@ __interrupt void PORT2_ISR_HOOK(void)
     /* replace this comment with your code */
     /* USER CODE END (section: PORT2_ISR_HOOK) */
   INT32U cnt_t=0;
-  _DINT();
+  //_DINT();
   if((P2IFG&BIT0)==BIT0)
   {
     P2IFG &=~ BIT0;
@@ -111,7 +111,7 @@ __interrupt void PORT2_ISR_HOOK(void)
   }
   P2IFG = 0;
   cnt_t=0; 
-  _EINT();
+  //_EINT();
   __bic_SR_register_on_exit(LPM0_bits);
   
 }
@@ -128,6 +128,29 @@ __interrupt void PORT1_ISR_HOOK(void)
   }
   P1IFG = 0;
   __bic_SR_register_on_exit(LPM0_bits);
+}
+
+
+/*
+ *  ======== Timer1_A3 Interrupt Service Routine ======== 
+ */
+
+int cnt_t=0;
+#pragma vector=TIMER1_A0_VECTOR
+__interrupt void TIMER1_A0_ISR_HOOK(void)
+{
+  if(cnt_t<2)
+  {
+    cnt_t++;
+    TA1CCR0 += 50000;                // Add Offset to CCR0
+  }
+  else
+  {
+    PWM_set(moto_2nd,PwmWith[2]);    //打开LED1：检验通信距离
+    __bic_SR_register_on_exit(LPM0_bits); //退出休眠模式
+    TA1CTL = MC_0;  //关闭定时器TA1
+	cnt_t=0;  
+  }
 }
 
 /*
