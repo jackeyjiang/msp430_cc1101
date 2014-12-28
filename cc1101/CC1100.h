@@ -10,6 +10,7 @@
 
 #define		INT8U		unsigned char
 #define		INT16U		unsigned int
+#define     INT32U      unsigned long int
 
 
 																						 
@@ -272,7 +273,7 @@ void setSleepMpde(void);
 函数说明： 电磁波WOR唤醒功能初始化 设置为0.5秒轮训
 函数备注： WOR 初始化 并进入掉电模式
 **************************************************/
-INT8U CC1101_InitWOR(void);
+INT8U CC1101_InitWOR(INT32U Time);
 
 /*************************************************
 函数名称 ： void CC1101_WOR(void)

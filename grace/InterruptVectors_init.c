@@ -64,10 +64,12 @@ __interrupt void PORT2_ISR_HOOK(void)
   if((P2IFG&BIT0)==BIT0)
   {
     P2IFG &=~ BIT0;
+    __bic_SR_register_on_exit(LPM0_bits);
   }
   else if((P2IFG&BIT1)==BIT1)
   {
     P2IFG &=~ BIT1;
+    
   } 
   else if((P2IFG&BIT6)==BIT6)
   {
@@ -85,6 +87,7 @@ __interrupt void PORT2_ISR_HOOK(void)
       if(PwmWidthNum<20) PwmWidthNum++;   
     }
     P2IFG&=~BIT6;
+    __bic_SR_register_on_exit(LPM4_bits);
   }
   else if((P2IFG&BIT7)==BIT7)
   {
@@ -104,6 +107,7 @@ __interrupt void PORT2_ISR_HOOK(void)
       }
       P2IFG&=~BIT7;
     }
+    __bic_SR_register_on_exit(LPM4_bits);
   }
   else
   {
@@ -112,7 +116,6 @@ __interrupt void PORT2_ISR_HOOK(void)
   P2IFG = 0;
   cnt_t=0; 
   //_EINT();
-  __bic_SR_register_on_exit(LPM0_bits);
   
 }
 
@@ -127,7 +130,7 @@ __interrupt void PORT1_ISR_HOOK(void)
     StopFlag = true;
   }
   P1IFG = 0;
-  __bic_SR_register_on_exit(LPM0_bits);
+  __bic_SR_register_on_exit(LPM4_bits);
 }
 
 

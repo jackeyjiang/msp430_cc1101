@@ -414,7 +414,7 @@ void setWorMode(void)
 函数说明： 电磁波WOR唤醒功能初始化 设置为0.5秒轮训
 函数备注： WOR 初始化 并进入掉电模式
 **************************************************/
-INT8U CC1101_InitWOR(void)
+/*INT8U CC1101_InitWOR(void)
 {
     // halSpiStrobe(CCxxx0_SIDLE); //进入空闲状态
     halSpiWriteReg(CCxxx0_MCSM2,0x03); //设置轮训时间
@@ -427,7 +427,7 @@ INT8U CC1101_InitWOR(void)
     halSpiStrobe(CCxxx0_SWORRST);
     halSpiStrobe(CCxxx0_SWOR); //启动WOR
     return 1;
-}
+}*/
 
 void CC1101_WOR(void)
 {
@@ -457,4 +457,111 @@ void EINT0_IRQHandler(void)       //中断处理程序  GDO0    设置为06
     // System_runfinger(); 
     // EINT0_Off(); 
     //WDT(); 
+}
+
+/******************************************************************************
+<函数说明>
+函数名称:CC1101_IntWOR
+函数入参:Time 时间 分 秒级和毫秒级  使用TimeLive来选择
+函数说明:电磁波WOR唤醒功能初始化
+函数备注:进入电磁波唤醒,也会同时进去到掉电模式,即SLEEP. 再次进入SLDE将会退出掉电模式
+         
+          当 TimeLive = WOR_MS 时, 不可大于60000ms 可用60000
+          当 TIMELIVE = WOR_S  时,不可大于 61947S  
+ 
+          #define WOR_S 0x11
+          #define WOR_MS 0x22
+ 
+返回值:
+******************************************************************************/
+INT8U WORmode =0; 
+#define F_xosc 26000000
+INT8U CC1101_InitWOR(INT32U Time)
+{
+  //uint16 T_Event0=60;   //把 EVENT0的时间设定为1S
+  INT32U EVENT0=0;
+  INT32U WOR_RES=1;
+  INT32U WOR_rest=1;      //2^(5*WOR_RES) 的值
+ 
+  WORmode =1; //开启WORMOD模式
+ 
+  //当输入数据 不符合规则的时候返回错误
+  if(Time<15 | Time>61946643) return 0;
+ 
+  /* WOR WOR_RES设定
+  以WOR_RES所能区分的最大时限 区分WOR_RES大小
+ 
+  WOR_RES值       时间(极限最大值)(ms)
+  0                1890.4615         *14.34 (最小值)
+  1                60494.7692
+  2                1935832.6153
+  3                61946643.6923
+  */
+  if(Time<1890) WOR_RES=0;
+  else if(Time<60494)       WOR_RES=1;
+  else if(Time<1935832)     WOR_RES=2;
+  else if(Time<61946643)    WOR_RES=3;
+ 
+  // WOR_rest 默认等于1
+  // WOR_rest=2^5WOR_RES
+  /*
+  if(!WOR_RES) WOR_rest=1;
+  else{
+  for(uint8 t=0;t<(5*WOR_RES);t++)WOR_rest *= 2;
+}
+  */
+  WOR_rest <<= 5*WOR_RES;
+ 
+  // 设置 Event0 timeout  (RX 轮询间隔时间);
+  // 事件0 EVENT0时间长度公式 T_event0 = 750 / f_xosc * EVENT0 * 2^(5*WOR_RES) = 1 s,   f_xosc 使用的是 26 MHz
+  // EVENT0 = (F_xosc*Time)/((750*WOR_rest)*Tms);
+ 
+  //由于计算的值普遍偏大,如果照常计算会出现溢出, 所以分段处理
+  EVENT0 = F_xosc/1000;
+  if(EVENT0>Time)
+  {
+    EVENT0 = EVENT0*Time;
+    EVENT0 = EVENT0/(750*WOR_rest); 
+  }
+  else
+  {
+    EVENT0 = (Time/(750*WOR_rest))*EVENT0;
+  }
+ 
+  halSpiStrobe(CCxxx0_SIDLE); //空闲模式
+  // 设置接收超时 Rx_timeout =2.596 ms.
+  // MCSM2.RX_TIME = 001b
+  // => Rx_timeout = EVENT0*C(RX_TIME, WOR_RES)
+  halSpiWriteReg(CCxxx0_MCSM2, 0x10);  //RX_TIME 0   占空比最大
+  // Enable automatic FS calibration when going from IDLE to RX/TX/FSTXON (in between EVENT0 and EVENT1)
+  //在TX,RX后 自动校准   XSOC时限 (10) 149-155uS
+  halSpiWriteReg(CCxxx0_MCSM0, 0x18);                  //校准 FS_AUTOCAL[1:0]  01    重IDLE转到TX OR RX模式时
+  //
+  //写入 事件0 时间
+  halSpiWriteReg(CCxxx0_WOREVT1, (INT8U)(EVENT0>>8));        // High byte Event0 timeout
+  halSpiWriteReg(CCxxx0_WOREVT0, (INT8U)EVENT0);             // Low byte Event0 timeout.
+ 
+  // 启动 WOR RCosc 校准
+  // 因为进入休眠后只使用RC频率周期,RC受环境和温度影响较大,所以必须一段时间或者WOR唤醒后重新校准一次时钟.
+  // 在WOR没启动之前 RC须得先行启动
+  // tEvent1 时间设置为最大,设置 T_event1 ~ 1.4 ms
+  halSpiWriteReg(CCxxx0_WORCTRL, 0x78| WOR_RES);             //tEvent1 =0111
+  //--RC_CAL =1 自动校准
+  //halWait(30);                                                //等待校准完成
+  //CC1101_WriteReg(CCxxx0_WORCTRL, 0x70 | WOR_RES);           // tEvent1 =0111 即 48 (1.333-1.385 ms)
+  // RC_CAL =0
+ 
+  //CC1101_WriteReg(CCxxx0_RCCTRL1, RCC1);
+  //CC1101_WriteReg(CCxxx0_RCCTRL0, RCC0);
+ 
+  //把SO口 设置成通知口 当有数据过来时 置低
+  halSpiWriteReg(CCxxx0_IOCFG2, 0x06);  //0x24);
+ 
+  halSpiStrobe(CCxxx0_SFRX); 
+ 
+  halSpiStrobe(CCxxx0_SWORRST);      //复位到 事件1
+  halSpiStrobe(CCxxx0_SWOR);         //启动WOR
+ 
+  //  CC1101_WriteCode(CCxxx0_SPWD); //进入断电模式
+  return 1;
 }

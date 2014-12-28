@@ -36,10 +36,10 @@ int main(void)
     PKLEN= halSpiReadReg(CCxxx0_PKTLEN);  //测试配置是否成功
 	halSpiWriteBurstReg(CCxxx0_PATABLE, PaTabel, 8); //配置天线增益
 #ifdef txmode  
-   //setSleepMpde(); //设置CC1101进入低功耗状态
+   setSleepMpde(); //设置CC1101进入低功耗状态
    while(1) //发送端
    {   
-        __bis_SR_register(LPM0_bits+GIE);  // Enter LPM0
+        __bis_SR_register(LPM4_bits+GIE);  // Enter LPM0
         PWM_set(moto_1st,PwmWith[PwmWidthNum]);   //设置本机的PWM输出 
         TxBuf[1]= Moto1stChange; Moto1stChange=false;
         TxBuf[2]= (PwmWith[PwmWidthNum]>>8)&0x00FF;
@@ -71,10 +71,11 @@ int main(void)
           TA1CTL = MC_0; //关闭定时器TIM1
           right_cnt=0;
         }
+        halSpiStrobe(CCxxx0_SIDLE);		//进入IDEL
         setSleepMpde(); //设置CC1101进入低功耗状态    
     }
 #else
-    //CC1101_InitWOR(); //初始化CC1101进入WOR模式
+    CC1101_InitWOR(1880); //初始化CC1101进入WOR模式
     while(1) //接收端
     {
   	    if(halRfReceivePacket(RxBuf,&leng)) //有数据就接收数据，无数据直接改变本地的PWM输出

@@ -69,7 +69,7 @@ void Timer0_A3_graceInit(void)
     TA0CCR1 = 0;
 
     /* TA0CCR2, Timer_A Capture/Compare Register 2 */
-    TA0CCR2 = 10;
+    TA0CCR2 = 0;
 
     /* 
      * TA0CTL, Timer_A3 Control Register
